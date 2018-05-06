@@ -1,23 +1,39 @@
 #ten skrypt przeprowadza selekcje atrybutow wykorzystujac algorytm Boruta
 
 library(Boruta)
+library(dummies)
 
 traindata_mean = read.csv("../Data_raw/MeanNanTrainingData.csv", header = TRUE)
 traindata_zero = read.csv("../Data_raw/RawTrainingData.csv", header = TRUE)
 
+test_data = read.csv("../Data_raw/RawTestData.csv")
+
 #zamiana zmiennych Cat z typu integer na typ factor
 cat_variables_columns = grep("Cat_", names(traindata_zero))
+cat_variables_names = names(traindata_zero)[cat_variables_columns]
 
 quant_variables_columns = grep("Quan", names(traindata_zero))
 
 #zastapienie NaNow zerami
 for(i in quant_variables_columns){
   traindata_zero[is.na(traindata_zero[,i]),i] = 0
+  test_data[is.na(test_data[,i]),i] = 0
 }
 
 #zamiana zmiennych Cat z typu integer na typ factor
 traindata_mean[,cat_variables_columns] = lapply(traindata_mean[,cat_variables_columns], factor)
 traindata_zero[,cat_variables_columns] = lapply(traindata_zero[,cat_variables_columns], factor)
+
+#podobno dla wielu algorytmow problemem sa sytuacje, w ktorych w danych testowych pojawia sie wartosc atrybutu kategorycznego nieobecna w danych treningowych
+#rozwiazanie - zamiana zmiennych kategorycznych na dummy variables
+dummy_variables= c()
+
+for (cat_variable in cat_variables_names){
+  dummy_variables = cbind(dummy_variables, dummy(cat_variable, traindata_zero, sep="_"))
+}
+
+dummy_traindata_zero = cbind(traindata_zero[ , !(names(traindata_zero) %in% cat_variables_names)],dummy_variables)
+#1763 atrybutow! po usunieciu duplikatow nadal jest ich 1292 (ewentualnie robic to po borucie?)
 
 #usuniecie kolumn bedacych duplikatami
 removed_traindata_mean = traindata_mean[, !duplicated(t(traindata_mean))]
@@ -81,6 +97,33 @@ union_selected_attributes = column_selected_attributes[[1]]
 for (k in 2:12){
   union_selected_attributes = union(column_selected_attributes[[k]],union_selected_attributes)
 }
+
+#zamiana wybranych zmiennych kategorycznych na dummy variables
+selected_cat_variables_columns = grep("Cat_", union_selected_attributes)
+selected_cat_variables_names = union_selected_attributes[selected_cat_variables_columns]
+
+selected_training_data = cbind(traindata_zero[2:13],traindata_zero[union_selected_attributes])
+write.csv(selected_training_data, file = "../Data_raw/BorutaSelectedTrainingData.csv")
+
+selected_test_data = cbind(test_data[2:13],test_data[union_selected_attributes])
+write.csv(selected_test_data, file = "../Data_raw/BorutaSelectedTestData.csv")
+
+selected_dummy_variables= c()
+selected_test_dummy_variables= c()
+
+for (cat_variable in selected_cat_variables_names){
+  selected_dummy_variables = cbind(selected_dummy_variables, dummy(cat_variable, selected_training_data, sep="_"))
+  selected_test_dummy_variables = cbind(selected_test_dummy_variables, dummy(cat_variable, selected_test_data, sep="_"))
+}
+
+selected_dummy_training_data = cbind(selected_training_data[ , !(names(selected_training_data) %in% selected_cat_variables_names)],selected_dummy_variables)
+selected_dummy_test_data = cbind(selected_test_data[ , !(names(selected_test_data) %in% selected_cat_variables_names)],selected_test_dummy_variables)
+
+#TODO: dodanie do selected_dummy_test_data brakujacych dummy kolumn z selected_dummy_training_data
+
+#TODO: usuniecie dodatkowych dummy kolumn z selected_dummy_test_data (odpowiadajacych wartosciom nieobecnym w danych treningowych)
+
+
 
 #ponizej obliczenia dla celow sprawozdania
 
