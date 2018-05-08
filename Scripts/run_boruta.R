@@ -120,10 +120,16 @@ selected_dummy_training_data = cbind(selected_training_data[ , !(names(selected_
 selected_dummy_test_data = cbind(selected_test_data[ , !(names(selected_test_data) %in% selected_cat_variables_names)],selected_test_dummy_variables)
 
 #TODO: dodanie do selected_dummy_test_data brakujacych dummy kolumn z selected_dummy_training_data
+unique_to_training_data = setdiff(names(selected_dummy_training_data), names(selected_dummy_test_data))
+selected_dummy_test_data[, unique_to_training_data] = 0
 
 #TODO: usuniecie dodatkowych dummy kolumn z selected_dummy_test_data (odpowiadajacych wartosciom nieobecnym w danych treningowych)
+unique_to_test_data = setdiff(names(selected_dummy_test_data), names(selected_dummy_training_data))
+selected_dummy_test_data = selected_dummy_test_data[, !(names(selected_dummy_test_data) %in% unique_to_test_data)]
 
+write.csv(selected_dummy_training_data, file = "../Data_raw/BorutaSelectedDummyTrainingData.csv")
 
+write.csv(selected_dummy_test_data, file = "../Data_raw/BorutaSelectedDummyTestData.csv")
 
 #ponizej obliczenia dla celow sprawozdania
 
