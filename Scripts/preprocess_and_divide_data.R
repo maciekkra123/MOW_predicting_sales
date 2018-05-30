@@ -69,11 +69,11 @@ mean_nan_test_data = rbind(mean_nan_complete_outcome_information[random_sample,]
 training_data = complete_outcome_information[-random_sample,]
 mean_nan_training_data = mean_nan_complete_outcome_information[-random_sample,]
 
-write.csv(training_data, file = "../Data_raw/RawTrainingData.csv")
-write.csv(test_data, file = "../Data_raw/RawTestData.csv")
+write.csv(training_data, file = "../Data_raw/RawTrainingData.csv", row.names=FALSE)
+write.csv(test_data, file = "../Data_raw/RawTestData.csv", row.names=FALSE)
 
-write.csv(mean_nan_training_data, file = "../Data_raw/MeanNanTrainingData.csv")
-write.csv(mean_nan_test_data, file = "../Data_raw/MeanNanTestData.csv")
+write.csv(mean_nan_training_data, file = "../Data_raw/MeanNanTrainingData.csv", row.names=FALSE)
+write.csv(mean_nan_test_data, file = "../Data_raw/MeanNanTestData.csv", row.names=FALSE)
 
 #znajdz liczbe nanow w kolumnie (dla celow pogladowych)
 #number_of_nans = apply(apply(input_data,2,is.na),2,sum)
