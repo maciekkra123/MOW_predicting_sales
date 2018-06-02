@@ -92,7 +92,7 @@ for (k in 1:12){
   column_selected_attributes[[k]] = intersect_selected_attributes
 }
 
-#polaczenie wszystkich atrybutow dla wszystkich kolumn <- stanowi ostateczny zbior atrybutow do treningu modelu regresji
+#polaczenie wszystkich atrybutow dla wszystkich kolumn
 union_selected_attributes = column_selected_attributes[[1]]
 for (k in 2:12){
   union_selected_attributes = union(column_selected_attributes[[k]],union_selected_attributes)
@@ -102,34 +102,59 @@ for (k in 2:12){
 selected_cat_variables_columns = grep("Cat_", union_selected_attributes)
 selected_cat_variables_names = union_selected_attributes[selected_cat_variables_columns]
 
-selected_training_data = cbind(traindata_zero[2:13],traindata_zero[union_selected_attributes])
-write.csv(selected_training_data, file = "../Data_raw/BorutaSelectedTrainingData.csv")
-
-selected_test_data = cbind(test_data[2:13],test_data[union_selected_attributes])
-write.csv(selected_test_data, file = "../Data_raw/BorutaSelectedTestData.csv")
-
-selected_dummy_variables= c()
+selected_training_dummy_variables= c()
 selected_test_dummy_variables= c()
 
 for (cat_variable in selected_cat_variables_names){
-  selected_dummy_variables = cbind(selected_dummy_variables, dummy(cat_variable, selected_training_data, sep="_"))
-  selected_test_dummy_variables = cbind(selected_test_dummy_variables, dummy(cat_variable, selected_test_data, sep="_"))
+  selected_training_dummy_variables = cbind(selected_training_dummy_variables, dummy(cat_variable, traindata_zero, sep="_"))
+  selected_test_dummy_variables = cbind(selected_test_dummy_variables, dummy(cat_variable, test_data, sep="_"))
 }
 
-selected_dummy_training_data = cbind(selected_training_data[ , !(names(selected_training_data) %in% selected_cat_variables_names)],selected_dummy_variables)
-selected_dummy_test_data = cbind(selected_test_data[ , !(names(selected_test_data) %in% selected_cat_variables_names)],selected_test_dummy_variables)
+unique_to_training_data = setdiff(colnames(selected_training_dummy_variables), colnames(selected_test_dummy_variables))
+unique_to_test_data = setdiff(colnames(selected_test_dummy_variables), colnames(selected_training_dummy_variables))
 
-#TODO: dodanie do selected_dummy_test_data brakujacych dummy kolumn z selected_dummy_training_data
-unique_to_training_data = setdiff(names(selected_dummy_training_data), names(selected_dummy_test_data))
-selected_dummy_test_data[, unique_to_training_data] = 0
+selected_test_dummy_variables = data.frame(selected_test_dummy_variables)
+selected_training_dummy_variables = data.frame(selected_training_dummy_variables)
 
-#TODO: usuniecie dodatkowych dummy kolumn z selected_dummy_test_data (odpowiadajacych wartosciom nieobecnym w danych treningowych)
-unique_to_test_data = setdiff(names(selected_dummy_test_data), names(selected_dummy_training_data))
-selected_dummy_test_data = selected_dummy_test_data[, !(names(selected_dummy_test_data) %in% unique_to_test_data)]
+#dodanie brakujacych dummy variables do danych testowych
+selected_test_dummy_variables[, unique_to_training_data] = 0
 
-write.csv(selected_dummy_training_data, file = "../Data_raw/BorutaSelectedDummyTrainingData.csv")
+#usuniecie dummy variables nieobecnych w danych treningowych
+selected_test_dummy_variables = selected_test_dummy_variables[, !(names(selected_test_dummy_variables) %in% unique_to_test_data)]
 
-write.csv(selected_dummy_test_data, file = "../Data_raw/BorutaSelectedDummyTestData.csv")
+#zapisanie danych treningowych i testowych dla kazdej zmiennej Outcome w oddzielnym pliku
+for (k in 1:12){
+  column_selected_training_data = cbind(traindata_zero[(k+1)],traindata_zero[column_selected_attributes[[k]]])
+  column_selected_test_data = cbind(test_data[(k+1)],test_data[column_selected_attributes[[k]]])
+  write.csv(column_selected_training_data, file = sprintf("../Data_raw/BorutaSelectedTrainingData_Outcome_M%s.csv", k),row.names=FALSE)
+  write.csv(column_selected_test_data, file = sprintf("../Data_raw/BorutaSelectedTestData_Outcome_M%s.csv", k), row.names=FALSE)
+  
+  column_selected_cat_variables_columns = grep("Cat_", column_selected_attributes[[k]])
+  column_selected_cat_variables_names = column_selected_attributes[[k]][column_selected_cat_variables_columns]
+  column_selected_dummy_variables_names = paste(column_selected_cat_variables_names, "_", sep="")
+  
+  column_selected_training_dummy_variables_columns = grep(paste(column_selected_dummy_variables_names, collapse="|"), colnames(selected_training_dummy_variables))
+  column_selected_training_dummy_variables = selected_training_dummy_variables[,column_selected_training_dummy_variables_columns]
+  
+  column_selected_test_dummy_variables_columns = grep(paste(column_selected_dummy_variables_names, collapse="|"), colnames(selected_test_dummy_variables))
+  column_selected_test_dummy_variables = selected_test_dummy_variables[,column_selected_test_dummy_variables_columns]
+  
+  column_selected_dummy_training_data = cbind(column_selected_training_data[ , !(names(column_selected_training_data) %in% column_selected_cat_variables_names)],column_selected_training_dummy_variables)
+  column_selected_dummy_test_data = cbind(column_selected_test_data[ , !(names(column_selected_test_data) %in% column_selected_cat_variables_names)],column_selected_test_dummy_variables)
+
+  write.csv(column_selected_dummy_training_data, file = sprintf("../Data_raw/BorutaSelectedDummyTrainingData_Outcome_M%s.csv", k),row.names=FALSE)
+  write.csv(column_selected_dummy_test_data, file = sprintf("../Data_raw/BorutaSelectedDummyTestData_Outcome_M%s.csv", k), row.names=FALSE)
+}
+
+#selected_training_data = cbind(traindata_zero[2:13],traindata_zero[union_selected_attributes])
+#write.csv(selected_training_data, file = "../Data_raw/BorutaSelectedTrainingData.csv", row.names=FALSE)
+
+#selected_test_data = cbind(test_data[2:13],test_data[union_selected_attributes])
+#write.csv(selected_test_data, file = "../Data_raw/BorutaSelectedTestData.csv", row.names=FALSE)
+
+#write.csv(selected_dummy_training_data, file = "../Data_raw/BorutaSelectedDummyTrainingData.csv", row.names=FALSE)
+
+#write.csv(selected_dummy_test_data, file = "../Data_raw/BorutaSelectedDummyTestData.csv", row.names=FALSE)
 
 #ponizej obliczenia dla celow sprawozdania
 
