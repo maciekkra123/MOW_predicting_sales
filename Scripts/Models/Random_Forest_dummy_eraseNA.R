@@ -3,12 +3,12 @@ library(dplyr)
 library(randomForest)
 library(Metrics)
 
-NTrees <- 200
-
-lasLosowy <- function(pred_col_name, error_score)
+NTrees <- 600
+seed_s <- 400
+lasLosowy <- function(pred_col_name)
 {
   stopifnot(require(randomForest))
-  
+  set.seed(seed_s)
   #zaladowanie danych treningowych oraz testowych dla kazdego z przewidywanych miesiecy
   training_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTrainingData_", pred_col_name,".csv"))
   test_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTestData_", pred_col_name,".csv"))
