@@ -3,7 +3,7 @@ library(dplyr)
 library(randomForest)
 library(Metrics)
 
-NTrees <- 600
+NTrees <- 1000
 seed_s <- 400
 lasLosowy <- function(pred_col_name)
 {
@@ -21,19 +21,19 @@ lasLosowy <- function(pred_col_name)
   
   #budowa formuly oraz lasu losowego
   fmla <- as.formula(paste(pred_col_name, " ~ ", terms))
-  h_500.rf <- randomForest(fmla, training_data, do.trace=200, ntree=NTrees, test=test_data)
-  print(h_500.rf)
+  h.rf <- randomForest(fmla, training_data, do.trace=200, ntree=NTrees, test=test_data)
+  plot(h.rf, main = paste0("RF for ", pred_col_name))
   
   #predykcja wartosci dla danych testowych
-  predict <- round(predict(h_500.rf, test_data))
-  rf_500_summary <- summary(h_500.rf)
+  predict <- round(predict(h.rf, test_data))
+  rf_500_summary <- summary(h.rf)
   
   #liczenie RMSLE oraz zwracanie wynikow
   actuals_preds <- data.frame(cbind(actuals=test_data[pred_col_name], predicteds=predict))  #make actuals_predicteds dataframe
   correlation_accuracy <- cor(actuals_preds)
   error_score <- rmsle(actuals_preds[pred_col_name], actuals_preds$predicteds)
   print(error_score)
-  result <- list("error_score" = error_score, "actuals_preds"=actuals_preds)
+  result <- list("error_score" = error_score, "actuals_preds"=actuals_preds, "model"= h.rf)
   return (result)
 }
 
@@ -59,6 +59,20 @@ for(i in 1:12)
 }
 df <- data.frame(matrix(unlist(rmsle_months)))
 write.csv(df, file = paste0("Scripts/Models/RF/RMSLE_rf", NTrees, ".csv"), row.names=FALSE)
+
+#wyswietlanie plotow dla kazdego z modeli
+par(mfrow=c(2,3)) 
+for(i in 1:6)
+{
+  eval(parse(text= paste0("plot(report_m", i, "_rf$model, main=\"Model for Outcome M", i, "\")")))
+}
+
+par(mfrow=c(2,3)) 
+for(i in 7:12)
+{
+  eval(parse(text= paste0("plot(report_m", i, "_rf$model, main=\"Model for Outcome M", i, "\")")))
+}
+
 
 #Liczenie rmsle dla calego modelu
 results <- report_m1_rf$actuals_preds
