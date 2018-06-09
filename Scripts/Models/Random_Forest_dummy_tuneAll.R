@@ -3,38 +3,26 @@ library(dplyr)
 library(randomForest)
 library(Metrics)
 
-NTrees <- 400
+NTrees <- 1500
 seed_s <- 400
-lasLosowy <- function(pred_col_name)
+lasLosowy <- function(pred_col_name, Nvar)
 {
   stopifnot(require(randomForest))
   set.seed(seed_s)
   #zaladowanie danych treningowych oraz testowych dla kazdego z przewidywanych miesiecy
   training_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTrainingData_", pred_col_name,".csv"))
   
-  #zamiana typow kategorycznych w zbiorze treningiowym na factors
-  cat_variables_columns = grep("Cat_", names(training_data))
-  day_of_Week_variables_columns = grep("Day_Of_Week", names(training_data))
-  training_data[cat_variables_columns] <- lapply(training_data[cat_variables_columns], factor, levels=c(0, 1))
-  training_data[day_of_Week_variables_columns] <- lapply(training_data[day_of_Week_variables_columns], factor, levels=c(0,1,2,3,4,5,6))
-  
   #wyrzucenie rekordow przyjmujacych wartosci NA w Outcome_Mx
   test_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTestData_", pred_col_name,".csv"))
   test_data = test_data[complete.cases(test_data[pred_col_name]),]
-  
-  #zamiana typow kategorycznych w zbiorze testujacym na factors
-  cat_variables_columns = grep("Cat_", names(test_data))
-  day_of_Week_variables_columns = grep("Day_Of_Week", names(test_data))
-  test_data[cat_variables_columns] <- lapply(test_data[cat_variables_columns], factor, levels=c(0, 1))
-  test_data[day_of_Week_variables_columns] <- lapply(test_data[day_of_Week_variables_columns], factor, levels=c(0,1,2,3,4,5,6))
   
   #ekstrakcja nazw atrybutow, ktore wplywaja na wartosc Outcome_Mx
   terms <- paste(names(training_data[,-1]), collapse = "+")
   
   #budowa formuly oraz lasu losowego
   fmla <- as.formula(paste(pred_col_name, " ~ ", terms))
-  h.rf <- randomForest(fmla, training_data, do.trace=200, ntree=NTrees, test=test_data)
-  plot(h.rf, main = paste0("RF for ", pred_col_name))
+  h.rf <- randomForest(fmla, training_data, do.trace=200, ntree=NTrees, mtry=Nvar, test=test_data)
+  #plot(h.rf, main = paste0("RF for ", pred_col_name))
   
   #predykcja wartosci dla danych testowych
   predict <- round(predict(h.rf, test_data))
@@ -49,60 +37,193 @@ lasLosowy <- function(pred_col_name)
   return (result)
 }
 
-# training_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTrainingData_Outcome_M1.csv"))
-# training_data <- training_data[,1]
-# plot(report_m1_rf$model)
-# 
-# t <- tuneRF(training_data[,-1], training_data[,1], stepFactor = 1, 
-#             plot = TRUE, ntreeTry = 400, trace = TRUE, improve = 0.05)
-
 
 #generowanie wynikow predykcji sprzedazy online dla wszystkich 12 miesiecy
-report_m1_rf <- lasLosowy("Outcome_M1")
-report_m2_rf <- lasLosowy("Outcome_M2")
-report_m3_rf <- lasLosowy("Outcome_M3")
-report_m4_rf <- lasLosowy("Outcome_M4")
-report_m5_rf <- lasLosowy("Outcome_M5")
-report_m6_rf <- lasLosowy("Outcome_M6")
-report_m7_rf <- lasLosowy("Outcome_M7")
-report_m8_rf <- lasLosowy("Outcome_M8")
-report_m9_rf <- lasLosowy("Outcome_M9")
-report_m10_rf <- lasLosowy("Outcome_M10")
-report_m11_rf <- lasLosowy("Outcome_M11")
-report_m12_rf <- lasLosowy("Outcome_M12")
+Nvars <- c(1:15)
+errs <- c()
+best_mtry <- c()
 
-#Zbieranie rmsle po miesiacach
-rmsle_months <- list()
-for(i in 1:12)
+#tune Outcome_M1
+errs <- c()
+for(nvar in Nvars)
 {
-  eval(parse(text= paste0("rmsle_months[i] <- report_m", i, "_rf$error_score")))
-}
-df <- data.frame(matrix(unlist(rmsle_months)))
-write.csv(df, file = paste0("Scripts/Models/RF/RMSLE_rf", NTrees, ".csv"), row.names=FALSE)
-
-#wyswietlanie plotow dla kazdego z modeli
-par(mfrow=c(2,3)) 
-for(i in 1:6)
-{
-  eval(parse(text= paste0("plot(report_m", i, "_rf$model, main=\"Model for Outcome M", i, "\")")))
+  report_m1_rf <- lasLosowy("Outcome_M1", nvar)
+  errs <- append(errs, report_m1_rf$error_score)
 }
 
 par(mfrow=c(2,3)) 
-for(i in 7:12)
+plot(errs, main = "RMSLE for Outcome_M1", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M2
+errs <- c()
+for(nvar in Nvars)
 {
-  eval(parse(text= paste0("plot(report_m", i, "_rf$model, main=\"Model for Outcome M", i, "\")")))
+  report_m2_rf <- lasLosowy("Outcome_M2", nvar)
+  errs <- append(errs, report_m2_rf$error_score)
 }
 
+plot(errs, main = "RMSLE for Outcome_M2", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
 
-#Liczenie rmsle dla calego modelu
-results <- report_m1_rf$actuals_preds
-colnames(results) <- c("Outcome", "predicteds")
-reports = paste0("report_m", 2:12, "_rf$actuals_preds")
-for(report.name in reports)
+#tune Outcome_M3
+errs <- c()
+for(nvar in Nvars)
 {
-  eval(parse(text= paste0("colnames(", report.name ,") <- c(\"Outcome\", \"predicteds\")")))
-  eval(parse(text= paste0("results <- rbind(results, ",report.name,")")))
+  report_m3_rf <- lasLosowy("Outcome_M3", nvar)
+  errs <- append(errs, report_m3_rf$error_score)
 }
-error_score <- rmsle(results$Outcome, results$predicteds)
-print(paste0("RMSLE dla calego modelu wynosi: " , error_score))
 
+plot(errs, main = "RMSLE for Outcome_M3", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M4
+errs <- c()
+for(nvar in Nvars)
+{
+  report_m4_rf <- lasLosowy("Outcome_M4", nvar)
+  errs <- append(errs, report_m4_rf$error_score)
+}
+
+plot(errs, main = "RMSLE for Outcome_M4", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M5
+errs <- c()
+for(nvar in Nvars)
+{
+  report_m5_rf <- lasLosowy("Outcome_M5", nvar)
+  errs <- append(errs, report_m5_rf$error_score)
+}
+
+plot(errs, main = "RMSLE for Outcome_M5", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M6
+errs <- c()
+for(nvar in Nvars)
+{
+  report_m6_rf <- lasLosowy("Outcome_M6", nvar)
+  errs <- append(errs, report_m6_rf$error_score)
+}
+
+plot(errs, main = "RMSLE for Outcome_M6", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M7
+errs <- c()
+for(nvar in Nvars)
+{
+  report_m7_rf <- lasLosowy("Outcome_M7", nvar)
+  errs <- append(errs, report_m7_rf$error_score)
+}
+
+plot(errs, main = "RMSLE for Outcome_M7", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M8
+errs <- c()
+for(nvar in Nvars)
+{
+  report_m8_rf <- lasLosowy("Outcome_M8", nvar)
+  errs <- append(errs, report_m8_rf$error_score)
+}
+
+plot(errs, main = "RMSLE for Outcome_M8", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M9
+errs <- c()
+for(nvar in Nvars)
+{
+  report_m9_rf <- lasLosowy("Outcome_M9", nvar)
+  errs <- append(errs, report_m9_rf$error_score)
+}
+
+plot(errs, main = "RMSLE for Outcome_M9", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M10
+errs <- c()
+for(nvar in Nvars)
+{
+  report_m10_rf <- lasLosowy("Outcome_M10", nvar)
+  errs <- append(errs, report_m10_rf$error_score)
+}
+
+plot(errs, main = "RMSLE for Outcome_M10", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M11
+errs <- c()
+for(nvar in Nvars)
+{
+  report_m11_rf <- lasLosowy("Outcome_M11", nvar)
+  errs <- append(errs, report_m11_rf$error_score)
+}
+
+plot(errs, main = "RMSLE for Outcome_M11", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+#tune Outcome_M12
+errs <- c()
+for(nvar in Nvars)
+{
+  report_m12_rf <- lasLosowy("Outcome_M12", nvar)
+  errs <- append(errs, report_m12_rf$error_score)
+}
+
+plot(errs, main = "RMSLE for Outcome_M12", xlab="mtry", ylab = "RMSLE")
+best_mtry <- append(best_mtry, which.min(errs))
+
+print(best_mtry)
+write.csv(best_mtry, "Scripts/Models/RF/best_mtries1-15.csv")
+
+# report_m1_rf <- lasLosowy("Outcome_M1")
+# report_m2_rf <- lasLosowy("Outcome_M2")
+# report_m3_rf <- lasLosowy("Outcome_M3")
+# report_m4_rf <- lasLosowy("Outcome_M4")
+# report_m5_rf <- lasLosowy("Outcome_M5")
+# report_m6_rf <- lasLosowy("Outcome_M6")
+# report_m7_rf <- lasLosowy("Outcome_M7")
+# report_m8_rf <- lasLosowy("Outcome_M8")
+# report_m9_rf <- lasLosowy("Outcome_M9")
+# report_m10_rf <- lasLosowy("Outcome_M10")
+# report_m11_rf <- lasLosowy("Outcome_M11")
+# report_m12_rf <- lasLosowy("Outcome_M12")
+# 
+# #Zbieranie rmsle po miesiacach
+# rmsle_months <- list()
+# for(i in 1:12)
+# {
+#   eval(parse(text= paste0("rmsle_months[i] <- report_m", i, "_rf$error_score")))
+# }
+# df <- data.frame(matrix(unlist(rmsle_months)))
+# write.csv(df, file = paste0("Scripts/Models/RF/RMSLE_rf", NTrees, ".csv"), row.names=FALSE)
+# 
+# #wyswietlanie plotow dla kazdego z modeli
+# par(mfrow=c(2,3)) 
+# for(i in 1:6)
+# {
+#   eval(parse(text= paste0("plot(report_m", i, "_rf$model, main=\"Model for Outcome M", i, "\")")))
+# }
+# 
+# par(mfrow=c(2,3)) 
+# for(i in 7:12)
+# {
+#   eval(parse(text= paste0("plot(report_m", i, "_rf$model, main=\"Model for Outcome M", i, "\")")))
+# }
+# 
+# 
+# #Liczenie rmsle dla calego modelu
+# results <- report_m1_rf$actuals_preds
+# colnames(results) <- c("Outcome", "predicteds")
+# reports = paste0("report_m", 2:12, "_rf$actuals_preds")
+# for(report.name in reports)
+# {
+#   eval(parse(text= paste0("colnames(", report.name ,") <- c(\"Outcome\", \"predicteds\")")))
+#   eval(parse(text= paste0("results <- rbind(results, ",report.name,")")))
+# }
+# error_score <- rmsle(results$Outcome, results$predicteds)
+# print(paste0("RMSLE dla calego modelu wynosi: " , error_score))
+# 
