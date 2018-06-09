@@ -75,6 +75,7 @@ for(i in 1:4) {
   training_dataset = training_datasets[[i]]
   test_dataset = test_datasets[[i]]
   directory_name = directories_names[[i]]
+  dir.create(file.path("../Data_raw", directory_name), showWarnings = FALSE)
   
   #wybranie atrybutow wspolnych dla wszystkich prob dla danej zmiennej outcome
   column_selected_attributes = matrix(rep(list(), 12),nrow = 10, ncol = 1)

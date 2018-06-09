@@ -83,6 +83,7 @@ for(i in 1:2) {
   training_dataset = training_datasets[[i]]
   test_dataset = test_datasets[[i]]
   directory_name = directories_names[[i]]
+  dir.create(file.path("../Data_raw", directory_name), showWarnings = FALSE)
   
   for (k in 1:12){
     selected_training_data = cbind(training_dataset[k], training_dataset[13:length(training_dataset)])
