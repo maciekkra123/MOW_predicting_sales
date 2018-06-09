@@ -11,7 +11,7 @@ lasLosowy <- function(pred_col_name)
   stopifnot(require(randomForest))
   set.seed(seed_s)
   #zaladowanie danych treningowych oraz testowych dla kazdego z przewidywanych miesiecy
-  training_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTrainingData_", pred_col_name,".csv"))
+  training_data <- read_csv(paste0("Data_raw/boruta_zero_nan/BorutaSelectedDummyTrainingData_", pred_col_name,".csv"))
   
   #zamiana typow kategorycznych w zbiorze treningiowym na factors
   cat_variables_columns = grep("Cat_", names(training_data))
@@ -20,7 +20,7 @@ lasLosowy <- function(pred_col_name)
   training_data[day_of_Week_variables_columns] <- lapply(training_data[day_of_Week_variables_columns], factor, levels=c(0,1,2,3,4,5,6))
   
   #wyrzucenie rekordow przyjmujacych wartosci NA w Outcome_Mx
-  test_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTestData_", pred_col_name,".csv"))
+  test_data <- read_csv(paste0("Data_raw/boruta_zero_nan/BorutaSelectedDummyTestData_", pred_col_name,".csv"))
   test_data = test_data[complete.cases(test_data[pred_col_name]),]
   
   #zamiana typow kategorycznych w zbiorze testujacym na factors
@@ -50,13 +50,6 @@ lasLosowy <- function(pred_col_name)
   return (result)
 }
 
-# training_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTrainingData_Outcome_M1.csv"))
-# training_data <- training_data[,1]
-# plot(report_m1_rf$model)
-# 
-# t <- tuneRF(training_data[,-1], training_data[,1], stepFactor = 1, 
-#             plot = TRUE, ntreeTry = 400, trace = TRUE, improve = 0.05)
-
 
 #generowanie wynikow predykcji sprzedazy online dla wszystkich 12 miesiecy
 report_m1_rf <- lasLosowy("Outcome_M1")
@@ -79,7 +72,7 @@ for(i in 1:12)
   eval(parse(text= paste0("rmsle_months[i] <- report_m", i, "_rf$error_score")))
 }
 df <- data.frame(matrix(unlist(rmsle_months)))
-write.csv(df, file = paste0("Scripts/Models/RF/RMSLE_rf", NTrees, ".csv"), row.names=FALSE)
+write.csv(df, file = paste0("Scripts/Models/RF/Data/RMSLE_rf", NTrees, ".csv"), row.names=FALSE)
 
 #wyswietlanie plotow dla kazdego z modeli
 par(mfrow=c(2,3)) 

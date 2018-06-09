@@ -59,7 +59,7 @@ for(i in 1:12)
   eval(parse(text= paste0("rmsle_months[i] <- report_m", i, "_rf$error_score")))
 }
 df <- data.frame(matrix(unlist(rmsle_months)))
-write.csv(df, file = paste0("Scripts/Models/RF/RMSLE_rf", NTrees, ".csv"), row.names=FALSE)
+write.csv(df, file = paste0("Scripts/Models/RF/Data/RMSLE_rf", NTrees, ".csv"), row.names=FALSE)
 
 #wyswietlanie plotow dla kazdego z modeli
 par(mfrow=c(2,3)) 
@@ -100,6 +100,3 @@ print(paste0("RMSLE dla calego modelu wynosi: " , error_score))
 # print(report_m10_rf$model) #6
 # print(report_m11_rf$model) #10
 # print(report_m12_rf$model) #6
-
-
-
