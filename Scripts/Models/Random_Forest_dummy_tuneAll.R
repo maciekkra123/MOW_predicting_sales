@@ -11,10 +11,22 @@ lasLosowy <- function(pred_col_name)
   set.seed(seed_s)
   #zaladowanie danych treningowych oraz testowych dla kazdego z przewidywanych miesiecy
   training_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTrainingData_", pred_col_name,".csv"))
-  test_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTestData_", pred_col_name,".csv"))
+  
+  #zamiana typow kategorycznych w zbiorze treningiowym na factors
+  cat_variables_columns = grep("Cat_", names(training_data))
+  day_of_Week_variables_columns = grep("Day_Of_Week", names(training_data))
+  training_data[cat_variables_columns] <- lapply(training_data[cat_variables_columns], factor, levels=c(0, 1))
+  training_data[day_of_Week_variables_columns] <- lapply(training_data[day_of_Week_variables_columns], factor, levels=c(0,1,2,3,4,5,6))
   
   #wyrzucenie rekordow przyjmujacych wartosci NA w Outcome_Mx
+  test_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTestData_", pred_col_name,".csv"))
   test_data = test_data[complete.cases(test_data[pred_col_name]),]
+  
+  #zamiana typow kategorycznych w zbiorze testujacym na factors
+  cat_variables_columns = grep("Cat_", names(test_data))
+  day_of_Week_variables_columns = grep("Day_Of_Week", names(test_data))
+  test_data[cat_variables_columns] <- lapply(test_data[cat_variables_columns], factor, levels=c(0, 1))
+  test_data[day_of_Week_variables_columns] <- lapply(test_data[day_of_Week_variables_columns], factor, levels=c(0,1,2,3,4,5,6))
   
   #ekstrakcja nazw atrybutow, ktore wplywaja na wartosc Outcome_Mx
   terms <- paste(names(training_data[,-1]), collapse = "+")
@@ -37,12 +49,12 @@ lasLosowy <- function(pred_col_name)
   return (result)
 }
 
-training_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTrainingData_Outcome_M1.csv"))
-training_data <- training_data[,1]
-plot(report_m1_rf$model)
-
-t <- tuneRF(training_data[,-1], training_data[,1], stepFactor = 1, 
-            plot = TRUE, ntreeTry = 400, trace = TRUE, improve = 0.05)
+# training_data <- read_csv(paste0("Data_raw/BorutaSelectedDummyTrainingData_Outcome_M1.csv"))
+# training_data <- training_data[,1]
+# plot(report_m1_rf$model)
+# 
+# t <- tuneRF(training_data[,-1], training_data[,1], stepFactor = 1, 
+#             plot = TRUE, ntreeTry = 400, trace = TRUE, improve = 0.05)
 
 
 #generowanie wynikow predykcji sprzedazy online dla wszystkich 12 miesiecy
