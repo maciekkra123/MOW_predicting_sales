@@ -1,12 +1,18 @@
-﻿Wymagane biblioteki:
+Wymagane biblioteki:
 -Boruta
 -dummies
+-readr
+-Metrics
+-dplyr
+-randomForest
 
 Setup:
 
 install.packages("Boruta")
 install.packages("dummies")
-
+install.packages("Metrics")
+install.packages("dplyr")
+install.packages("randomForest")
 
 Rozmieszczenie plików:
 
