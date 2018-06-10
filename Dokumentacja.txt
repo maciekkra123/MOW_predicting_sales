@@ -1,0 +1,20 @@
+Rozmieszczenie plików:
+
+/Charts				Wykresy diagnostyczne wygenerowane podczas strojenia parametrów	
+
+
+/Kaggle_data			Dane pobrane z serwisu Kaggle.
+
+
+/Data_raw			Dane, na których będziemy operować (z Kaggle tylko Training_Dataset.csv)
+/Data_raw/Data_old		Cały nasz zbiór danych do trenowania i walidacji modelu (na podstawie Training_Dataset.csv), bez żadnej obróbki.
+
+
+/Scripts			Folder na skrypty 
+/Scripts/*.R			Skrypty do przetwarzania i przygotowywania danych (w tym z wykorzystaniem algorytmu Boruty)
+/Scripts/Models/LinReg		Skrypty wykorzystujące regresję liniową (wykorzystujące dane z selekcją atrybutów - Boruta - w dwóch wariantach:
+																* zamiana NaN na zera
+																* zamiana NAN na średnie
+/Scripts/Models/LinReg/Data	Dane diagnostyczne (logi) z wykorzystania regresji liniowej w analizowanych przypadkach
+
+/Scripts/Models/RF
