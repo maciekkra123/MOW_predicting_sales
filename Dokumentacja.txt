@@ -1,34 +1,60 @@
+﻿Wymagane biblioteki:
+-Boruta
+-dummies
+
+Setup:
+
+install.packages("Boruta")
+install.packages("dummies")
+
+
 Rozmieszczenie plików:
 
-/Charts				Wykresy diagnostyczne wygenerowane podczas strojenia parametrów	
+/Charts					Wykresy diagnostyczne wygenerowane podczas strojenia parametrów	
 
 
-/Kaggle_data			Dane pobrane z serwisu Kaggle.
+/Kaggle_data				Dane pobrane z serwisu Kaggle.
 
 
-/Data_raw			Dane, na których będziemy operować (z Kaggle tylko Training_Dataset.csv)
-/Data_raw/Data_old		Cały nasz zbiór danych do trenowania i walidacji modelu (na podstawie Training_Dataset.csv), bez żadnej obróbki.
+/Data_raw				Dane, na których będziemy operować (z Kaggle tylko Training_Dataset.csv)
+/Data_raw/Data_old.csv			Cały nasz zbiór danych do trenowania i walidacji modelu (na podstawie Training_Dataset.csv), bez żadnej obróbki.
 
 
-/Scripts			Folder na skrypty 
-/Scripts/*.R			Skrypty do przetwarzania i przygotowywania danych (w tym z wykorzystaniem algorytmu Boruty)
-/Scripts/Models/LinReg		Skrypty wykorzystujące regresję liniową (wykorzystujące dane z selekcją atrybutów - Boruta - w dwóch wariantach:
-																* zamiana NaN na zera
-																* zamiana NAN na średnie
-/Scripts/Models/LinReg/Data	Dane diagnostyczne (logi) z wykorzystania regresji liniowej w analizowanych przypadkach
+/Scripts				Folder na skrypty. Uruchomienie skryptów wymaga uprzedniego wejścia do tego katalogu komendą "setwd()"
+/Scripts/preprocess_and_divide_data.R	Skrypt przetwarza dane z pliku /Data_raw/Data_old.csv:
+					* Usuwa wiersze o brakującej wartości zmiennej Date_2
+					* Usuwa kolumny o zerowej wariancji
+					* Dodaje nowe parametry w oparciu o dane Date
+					* Uzupełnia NaNy zerem/średnią
+					* Dokonuje podziału na zbiór treningowy i testowy
+					* Przekształca zmienne kategoryczne do postaci dummy values
+					Skrypt zapisuje przygotowuje dane dla skryptu run_boruta.R oraz dane na potrzeby eksperymentu bez selekcji algorytmem Boruta.
+/Scripts/run_boruta.R			Skrypt do wykonania selekcji atrybutów z wykorzystanie algorytmu Boruta w czterech wariantach:
+					* NaNy przybliżone zerem (boruta_zero_nan)
+					* NaNy przybliżone średnią (boruta_mean_nan)
+					* Usunięte zduplikowane atrybuty, NaNy przybliżone zerem (boruta_removed_duplicates_zero_nan)
+					* Usunięte zduplikowane atrybuty, NaNy przybliżone średnią (boruta_removed_duplicates_mean_nan)
+					Czas obliczeń jest stosunkowo długi: 4 warianty * 12 kolumn Outcome * 10 uruchomień na kolumnę * 3 min na uruchomienie = 24 h
+					Skrypt wymaga wcześniejszego uruchomienia skryptu preprocess_and_divide_data.R.
+					Atrybuty kategoryczne oznaczone jako istotne są przekształcane do postaci dummy values.
+					Skrypt zapisuje wyselekcjonowane dane treningowe i testowe dla każdego atrybutu Outcome w oddzielnym pliku, dla każdego wariantu w odrębynm folderze.
+/Scripts/Models/LinReg			Skrypty wykorzystujące regresję liniową (wykorzystujące dane z selekcją atrybutów - Boruta - w dwóch wariantach:
+																	* zamiana NaN na zera
+																	* zamiana NAN na średnie
+/Scripts/Models/LinReg/Data		Dane diagnostyczne (logi) z wykorzystania regresji liniowej w analizowanych przypadkach
 
-/Scripts/Models/RF/*.R		Skrypty wykorzystywane do dostrajania lasu losowego (na zbiorze danych z wykorzystaniem selekcji atr. oraz NaN -> zera):
-				* Random_Forest_intro.R - pierwszy skrypt z lasem losowym (dostrojenie liczby drzew)
-				* Random_Forest_dummy_factors.R - zamiana typu atrybutów Cat_ na 'factor' (nieudana)
-				* Random_Forest_dummy_tuneAll.R - wykonanie wstępnego tuningu parametry 'mtry'
-				* Random_Forest_dummy_afterTuning.R - sprawdzenie poprzedniego kroku
-				* Random_Forest_dummy.R - najlepszy model dla analizowanego zbioru danych.
-/Scripts/Models/Data		Dane diagnostyczne przy dostrajaniu lasu losowego
-/Scripts/Models/Scenariusze	Skrypty z różnymi wariantami przygotowanych danych (te same parametry co w poprzednim najlepszym modelu):
-				* Random_Forest_boruta_zero_nan.R - odpowiednik poprzedniego 'Random_Forest_dummy.R'
-				* Random_Forest_boruta_mean_nan.R - wykorzystanie wariantu z selekcją atrybutów oraz zamianą NaN na średnie
-				* Random_Forest_boruta_removed_duplicates_zero_nan.R - selekcja z wykorzystaniem algorytmu Boruty, NaN zastąpione zerami, usunięte zduplikowane kolumny
-				* Random_Forest_boruta_removed_duplicates_mean_nan.R - selekcja z wykorzystaniem algorytmu Boruty, NaN zastąpione średnią, usunięte zduplikowane kolumny
-				* Random_Forest_no_boruta_zero_nan.R - bez selekcji atrybutów, NaN zastąpione zerami
-				* Random_Forest_no_boruta_mean_nan.R - bez selekcji atrybutów, NaN zastąpione średnią
+/Scripts/Models/RF/*.R			Skrypty wykorzystywane do dostrajania lasu losowego (na zbiorze danych z wykorzystaniem selekcji atr. oraz NaN -> zera):
+					* Random_Forest_intro.R - pierwszy skrypt z lasem losowym (dostrojenie liczby drzew)
+					* Random_Forest_dummy_factors.R - zamiana typu atrybutów Cat_ na 'factor' (nieudana)
+					* Random_Forest_dummy_tuneAll.R - wykonanie wstępnego tuningu parametry 'mtry'
+					* Random_Forest_dummy_afterTuning.R - sprawdzenie poprzedniego kroku
+					* Random_Forest_dummy.R - najlepszy model dla analizowanego zbioru danych.
+/Scripts/Models/Data			Dane diagnostyczne przy dostrajaniu lasu losowego
+/Scripts/Models/Scenariusze		Skrypty z różnymi wariantami przygotowanych danych (te same parametry co w poprzednim najlepszym modelu):
+					* Random_Forest_boruta_zero_nan.R - odpowiednik poprzedniego 'Random_Forest_dummy.R'
+					* Random_Forest_boruta_mean_nan.R - wykorzystanie wariantu z selekcją atrybutów oraz zamianą NaN na średnie
+					* Random_Forest_boruta_removed_duplicates_zero_nan.R - selekcja z wykorzystaniem algorytmu Boruty, NaN zastąpione zerami, usunięte zduplikowane kolumny
+					* Random_Forest_boruta_removed_duplicates_mean_nan.R - selekcja z wykorzystaniem algorytmu Boruty, NaN zastąpione średnią, usunięte zduplikowane kolumny
+					* Random_Forest_no_boruta_zero_nan.R - bez selekcji atrybutów, NaN zastąpione zerami
+					* Random_Forest_no_boruta_mean_nan.R - bez selekcji atrybutów, NaN zastąpione średnią
 /Scripts/Models/Data
