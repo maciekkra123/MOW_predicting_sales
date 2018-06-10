@@ -11,8 +11,8 @@ lasLosowy <- function(pred_col_name)
   stopifnot(require(randomForest))
   set.seed(seed_s)
   #zaladowanie danych treningowych oraz testowych dla kazdego z przewidywanych miesiecy
-  training_data <- read_csv(paste0("Data_raw/boruta_zero_nan/BorutaSelectedDummyTrainingData_", pred_col_name,".csv"))
-  test_data <- read_csv(paste0("Data_raw/boruta_zero_nan/BorutaSelectedDummyTestData_", pred_col_name,".csv"))
+  training_data <- read_csv(paste0("Data_raw/boruta_mean_nan/BorutaSelectedDummyTrainingData_", pred_col_name,".csv"))
+  test_data <- read_csv(paste0("Data_raw/boruta_mean_nan/BorutaSelectedDummyTestData_", pred_col_name,".csv"))
   
   #wyrzucenie rekordow przyjmujacych wartosci NA w Outcome_Mx
   test_data = test_data[complete.cases(test_data[pred_col_name]),]
@@ -86,6 +86,7 @@ for(report.name in reports)
 }
 error_score <- rmsle(results$Outcome, results$predicteds)
 print(paste0("RMSLE dla calego modelu wynosi: " , error_score))
+
 
 # #sprawdzanie 'No. of variables tried at each split'
 # print(report_m1_rf$model) #11
